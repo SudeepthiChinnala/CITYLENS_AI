@@ -1,0 +1,51 @@
+{
+  "common": {
+    "appName": "CityLens AI",
+    "login": "Login",
+    "register": "Register",
+    "logout": "Logout",
+    "submit": "Submit",
+    "cancel": "Cancel",
+    "back": "Back",
+    "loading": "Loading..."
+  },
+  "status": {
+    "reported": "Reported",
+    "under_review": "Under Review",
+    "in_progress": "In Progress",
+    "resolved": "Resolved",
+    "assigned": "Assigned"
+  },
+  "severity": {
+    "low": "Low",
+    "medium": "Medium",
+    "high": "High"
+  },
+  "priority": {
+    "critical": "Critical",
+    "high": "High",
+    "medium": "Medium",
+    "low": "Low"
+  },
+  "citizen": {
+    "reportIssue": "Report an Urban Problem",
+    "myComplaints": "My Complaints",
+    "mapView": "Complaint Map",
+    "description": "Description",
+    "uploadImage": "Upload Image",
+    "location": "Location"
+  },
+  "admin": {
+    "dashboard": "Admin Dashboard",
+    "complaints": "All Complaints",
+    "hotspots": "Hotspots & Risk Map",
+    "areaIntelligence": "Area Intelligence",
+    "analytics": "Analytics",
+    "updateStatus": "Update Status",
+    "progressPhoto": "Upload Progress Photo",
+    "resolutionPhoto": "Upload Resolution Photo",
+    "authorityMessage": "Authority Message",
+    "authenticityChecks": "Authenticity Checks Passed",
+    "noAiDetected": "No known AI-generation indicators detected"
+  }
+}

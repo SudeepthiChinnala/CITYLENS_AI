@@ -1,0 +1,51 @@
+{
+  "common": {
+    "appName": "सिटीलेंस एआई",
+    "login": "लॉग इन",
+    "register": "पंजीकरण करें",
+    "logout": "लॉग आउट",
+    "submit": "सबमिट करें",
+    "cancel": "रद्द करें",
+    "back": "वापस",
+    "loading": "लोड हो रहा है..."
+  },
+  "status": {
+    "reported": "दर्ज किया गया",
+    "under_review": "समीक्षा के अधीन",
+    "in_progress": "प्रगति पर है",
+    "resolved": "समाधान हो गया",
+    "assigned": "आवंटित"
+  },
+  "severity": {
+    "low": "कम",
+    "medium": "मध्यम",
+    "high": "उच्च"
+  },
+  "priority": {
+    "critical": "गंभीर",
+    "high": "उच्च",
+    "medium": "मध्यम",
+    "low": "कम"
+  },
+  "citizen": {
+    "reportIssue": "शहरी समस्या की रिपोर्ट करें",
+    "myComplaints": "मेरी शिकायतें",
+    "mapView": "शिकायत मानचित्र",
+    "description": "विवरण",
+    "uploadImage": "छवि अपलोड करें",
+    "location": "स्थान"
+  },
+  "admin": {
+    "dashboard": "एडमिन डैशबोर्ड",
+    "complaints": "सभी शिकायतें",
+    "hotspots": "हॉटस्पॉट और जोखिम मानचित्र",
+    "areaIntelligence": "क्षेत्र बुद्धिमत्ता",
+    "analytics": "विश्लेषण",
+    "updateStatus": "स्थिति अपडेट करें",
+    "progressPhoto": "प्रगति की फोटो अपलोड करें",
+    "resolutionPhoto": "समाधान की फोटो अपलोड करें",
+    "authorityMessage": "प्राधिकरण संदेश",
+    "authenticityChecks": "प्रामाणिकता जांच सफल रही",
+    "noAiDetected": "कोई ज्ञात AI-जनरेटेड संकेतक नहीं मिला"
+  }
+}

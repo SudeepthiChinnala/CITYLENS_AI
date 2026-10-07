@@ -1,0 +1,11 @@
+fastapi
+uvicorn[standard]
+python-multipart
+sqlalchemy
+pydantic
+alembic
+torch
+transformers
+scikit-learn
+numpy
+pillow

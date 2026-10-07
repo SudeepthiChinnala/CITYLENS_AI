@@ -1,0 +1,51 @@
+{
+  "common": {
+    "appName": "సిటీలెన్స్ AI",
+    "login": "లాగిన్",
+    "register": "రిజిస్టర్",
+    "logout": "లాగౌట్",
+    "submit": "సమర్పించు",
+    "cancel": "రద్దు చేయి",
+    "back": "వెనుకకు",
+    "loading": "లోడ్ అవుతోంది..."
+  },
+  "status": {
+    "reported": "నమోదైంది",
+    "under_review": "పరిశీలనలో ఉంది",
+    "in_progress": "పురోగతిలో ఉంది",
+    "resolved": "పరిష్కరించబడింది",
+    "assigned": "కేటాయించబడింది"
+  },
+  "severity": {
+    "low": "తక్కువ",
+    "medium": "మధ్యస్థం",
+    "high": "తీవ్రమైన"
+  },
+  "priority": {
+    "critical": "క్లిష్టమైన (Critical)",
+    "high": "అధికం",
+    "medium": "మధ్యస్థం",
+    "low": "తక్కువ"
+  },
+  "citizen": {
+    "reportIssue": "పట్టణ సమస్యను నివేదించండి",
+    "myComplaints": "నా ఫిర్యాదులు",
+    "mapView": "ఫిర్యాదుల మ్యాప్",
+    "description": "వివరణ",
+    "uploadImage": "చిత్రాన్ని అప్‌లోడ్ చేయండి",
+    "location": "ప్రాంతం / వేదిక"
+  },
+  "admin": {
+    "dashboard": "అడ్మిన్ డాష్‌బోర్డ్",
+    "complaints": "అన్ని ఫిర్యాదులు",
+    "hotspots": "హాట్‌స్పాట్‌లు మరియు రిస్క్ మ్యాప్",
+    "areaIntelligence": "ప్రాంతీయ విశ్లేషణ",
+    "analytics": "అనలిటిక్స్",
+    "updateStatus": "స్థితిని నవీకరించండి (Update Status)",
+    "progressPhoto": "పురోగతి ఫోటోను అప్‌లోడ్ చేయండి",
+    "resolutionPhoto": "పరిష్కార ఫోటోను అప్‌లోడ్ చేయండి",
+    "authorityMessage": "అధికారుల సందేశం",
+    "authenticityChecks": "ప్రామాణికత తనిఖీలు పూర్తయ్యాయి",
+    "noAiDetected": "AI ద్వారా రూపొందించబడిన సంకేతాలు ఏవీ గుర్తించబడలేదు"
+  }
+}

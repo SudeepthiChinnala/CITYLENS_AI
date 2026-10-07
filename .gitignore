@@ -1,0 +1,21 @@
+# Local authentication secrets
+/backend/.env
+
+# Local runtime and generated files
+/.work/
+/.venv/
+/.hf-cache/
+/frontend/node_modules/
+/frontend/dist/
+__pycache__/
+*.py[cod]
+# Local tool/config folders
+/.manus/
+/.tools/
+
+# Generated/user files
+/uploads/
+/outputs/
+# Local backup/copy folders
+/CITYLENS_AI ZIP/
+/citylens-ui-redesign-copy/
