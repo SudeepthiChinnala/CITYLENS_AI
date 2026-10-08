@@ -1,7 +1,33 @@
 import axios from 'axios';
 
-// All calls go through the Vite /api proxy (see vite.config.js) -> FastAPI on :8000
-const api = axios.create({ baseURL: '/api', withCredentials: true });
+// Read API URL from environment variables or fallback to relative '/api'
+const API_BASE_URL = (import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || '/api').replace(/\/+$/, '');
+
+const api = axios.create({
+  baseURL: API_BASE_URL,
+  withCredentials: true,
+});
+
+// Attach Authorization Bearer token header if present in localStorage
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('citylens_token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+}, (error) => Promise.reject(error));
+
+// Handle 401 responses by clearing saved authentication
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      localStorage.removeItem('citylens_token');
+      localStorage.removeItem('citylens_user');
+    }
+    return Promise.reject(error);
+  }
+);
 
 export const loginCitizen = (accountId, password) => api.post('/auth/citizen/login', { account_id: accountId, password }).then(r => r.data);
 export const loginAdmin = (accountId, password) => api.post('/auth/admin/login', { account_id: accountId, password }).then(r => r.data);

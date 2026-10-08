@@ -9,6 +9,9 @@
 /frontend/dist/
 __pycache__/
 *.py[cod]
+*.backup
+citylens-git.db
+
 # Local tool/config folders
 /.manus/
 /.tools/
@@ -16,6 +19,7 @@ __pycache__/
 # Generated/user files
 /uploads/
 /outputs/
+
 # Local backup/copy folders
 /CITYLENS_AI ZIP/
 /citylens-ui-redesign-copy/
