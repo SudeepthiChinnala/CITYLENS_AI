@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { createWorker, getWorkerProfile, getWorkers, getWorkforceSummary, updateWorkerAccountStatus } from '../services/api';
+import { createWorker, getWorkerProfile, getWorkers, getWorkforceSummary, registerAdmin, updateWorkerAccountStatus } from '../services/api';
 
 const METRICS = [
   ['total_workers', 'Total Workers', ''],
@@ -36,7 +36,9 @@ function Workforce() {
   const [formError, setFormError] = useState('');
   const [success, setSuccess] = useState('');
   const [saving, setSaving] = useState(false);
+  const [createRole, setCreateRole] = useState('worker'); // 'worker' | 'admin'
   const [workerForm, setWorkerForm] = useState({ worker_id: '', full_name: '', phone: '', department: '', password: '' });
+  const [adminForm, setAdminForm] = useState({ admin_id: '', full_name: '', email: '', password: '' });
 
   const load = async () => {
     setError('');
@@ -52,7 +54,7 @@ function Workforce() {
 
   useEffect(() => { setLoading(true); setProfile(null); load(); }, [workerId]);
 
-  const create = async event => {
+  const createWorkerAccount = async event => {
     event.preventDefault();
     setSaving(true);
     setFormError('');
@@ -61,9 +63,22 @@ function Workforce() {
       const created = await createWorker(workerForm);
       setWorkers(current => [...current, created].sort((a, b) => a.full_name.localeCompare(b.full_name)));
       setWorkerForm({ worker_id: '', full_name: '', phone: '', department: '', password: '' });
-      setSuccess(`Worker account ${created.worker_id} was created.`);
+      setSuccess(`Worker account ${created.worker_id} was created successfully.`);
       const metrics = await getWorkforceSummary();
       setSummary(metrics);
+    } catch (err) { setFormError(errorMessage(err)); }
+    finally { setSaving(false); }
+  };
+
+  const createAdminAccount = async event => {
+    event.preventDefault();
+    setSaving(true);
+    setFormError('');
+    setSuccess('');
+    try {
+      const res = await registerAdmin(adminForm);
+      setAdminForm({ admin_id: '', full_name: '', email: '', password: '' });
+      setSuccess(`Admin account ${res.admin_id} was created successfully.`);
     } catch (err) { setFormError(errorMessage(err)); }
     finally { setSaving(false); }
   };
@@ -101,16 +116,39 @@ function Workforce() {
           {!profile.assignments?.length ? <p className="placeholder">No complaint assignments recorded.</p> : <div className="table-scroll"><table className="workforce-table"><thead><tr><th>Complaint</th><th>Area</th><th>Assigned</th><th>Deadline</th><th>Work status</th><th>Progress</th><th>Priority</th><th>Assignment</th></tr></thead><tbody>{profile.assignments.map(item => <tr key={item.assignment_id}><td><strong>#{item.complaint_id}</strong><span className="table-subline">{item.problem_type || 'Civic issue'}</span></td><td>{item.area || 'Unknown'}</td><td>{formatDate(item.assigned_at)}</td><td>{formatDate(item.deadline)}</td><td><span className={`badge worker-status-${String(item.status).toLowerCase().replaceAll(' ', '-')}`}>{item.status}</span></td><td>{item.progress_percentage}%</td><td>{item.priority_score == null ? '—' : Number(item.priority_score).toFixed(1)}</td><td>{item.active ? 'Current' : 'History'}</td></tr>)}</tbody></table></div>}
         </section>
       </> : <div className="workforce-admin-grid">
-        <section className="panel workforce-create-panel"><div className="workforce-section-heading"><div><span className="eyebrow">ACCOUNT MANAGEMENT</span><h2>Create worker account</h2></div></div><p className="hint">Worker accounts are created by Admin only. The password is stored as a one-way verifier and is never returned by the API.</p>
-          {success && <div className="field-ok" role="status">{success}</div>}{formError && <div className="error" role="alert">{formError}</div>}
-          <form className="form" onSubmit={create}>
-            <div className="field"><label htmlFor="worker-id">Worker ID</label><input id="worker-id" minLength={3} maxLength={32} value={workerForm.worker_id} onChange={e => setWorkerForm(current => ({ ...current, worker_id: e.target.value }))} autoComplete="off" required /></div>
-            <div className="field"><label htmlFor="worker-name">Full name</label><input id="worker-name" maxLength={120} value={workerForm.full_name} onChange={e => setWorkerForm(current => ({ ...current, full_name: e.target.value }))} autoComplete="off" required /></div>
-            <div className="field"><label htmlFor="worker-phone">Phone (optional)</label><input id="worker-phone" maxLength={30} value={workerForm.phone} onChange={e => setWorkerForm(current => ({ ...current, phone: e.target.value }))} autoComplete="off" /></div>
-            <div className="field"><label htmlFor="worker-department">Department / specialization</label><input id="worker-department" maxLength={120} value={workerForm.department} onChange={e => setWorkerForm(current => ({ ...current, department: e.target.value }))} autoComplete="organization-title" required /></div>
-            <div className="field"><label htmlFor="worker-password">Initial password</label><input id="worker-password" type="password" minLength={8} maxLength={128} value={workerForm.password} onChange={e => setWorkerForm(current => ({ ...current, password: e.target.value }))} autoComplete="new-password" required /><div className="hint-sm">At least 8 characters. Provide it to the worker through your normal secure channel.</div></div>
-            <button className="btn primary" type="submit" disabled={saving}>{saving ? 'Creating…' : 'Create worker account'}</button>
-          </form>
+        <section className="panel workforce-create-panel">
+          <div className="workforce-section-heading">
+            <div>
+              <span className="eyebrow">ACCOUNT MANAGEMENT</span>
+              <h2>{createRole === 'worker' ? '+ Create Worker Account' : '+ Create Admin Account'}</h2>
+            </div>
+            <div className="account-type-toggle">
+              <button className={`btn ${createRole === 'worker' ? 'primary' : ''}`} type="button" onClick={() => { setCreateRole('worker'); setFormError(''); setSuccess(''); }}>Worker Account</button>
+              <button className={`btn ${createRole === 'admin' ? 'primary' : ''}`} type="button" onClick={() => { setCreateRole('admin'); setFormError(''); setSuccess(''); }}>Admin Account</button>
+            </div>
+          </div>
+          <p className="hint">Accounts are created securely by an authenticated Admin. Passwords are stored as salted PBKDF2 hashes and are never exposed in API responses.</p>
+          {success && <div className="field-ok" role="status">{success}</div>}
+          {formError && <div className="error" role="alert">{formError}</div>}
+          
+          {createRole === 'worker' ? (
+            <form className="form" onSubmit={createWorkerAccount}>
+              <div className="field"><label htmlFor="worker-id">Worker ID</label><input id="worker-id" placeholder="e.g. WKR-101" minLength={3} maxLength={32} value={workerForm.worker_id} onChange={e => setWorkerForm(current => ({ ...current, worker_id: e.target.value }))} autoComplete="off" required /></div>
+              <div className="field"><label htmlFor="worker-name">Full name</label><input id="worker-name" placeholder="Enter worker's full name" maxLength={120} value={workerForm.full_name} onChange={e => setWorkerForm(current => ({ ...current, full_name: e.target.value }))} autoComplete="off" required /></div>
+              <div className="field"><label htmlFor="worker-phone">Phone number <span className="placeholder">(optional)</span></label><input id="worker-phone" placeholder="Enter phone number" maxLength={30} value={workerForm.phone} onChange={e => setWorkerForm(current => ({ ...current, phone: e.target.value }))} autoComplete="off" /></div>
+              <div className="field"><label htmlFor="worker-department">Department / Specialization</label><input id="worker-department" placeholder="e.g. Roads & Infrastructure" maxLength={120} value={workerForm.department} onChange={e => setWorkerForm(current => ({ ...current, department: e.target.value }))} autoComplete="organization-title" required /></div>
+              <div className="field"><label htmlFor="worker-password">Initial Password</label><input id="worker-password" type="password" placeholder="At least 8 characters" minLength={8} maxLength={128} value={workerForm.password} onChange={e => setWorkerForm(current => ({ ...current, password: e.target.value }))} autoComplete="new-password" required /><div className="hint-sm">Provide this password to the field worker through your secure channel.</div></div>
+              <button className="btn primary" type="submit" disabled={saving}>{saving ? 'Creating…' : 'Create Worker Account'}</button>
+            </form>
+          ) : (
+            <form className="form" onSubmit={createAdminAccount}>
+              <div className="field"><label htmlFor="admin-id">Admin ID</label><input id="admin-id" placeholder="e.g. ADMIN-002" minLength={3} maxLength={32} value={adminForm.admin_id} onChange={e => setAdminForm(current => ({ ...current, admin_id: e.target.value }))} autoComplete="off" required /></div>
+              <div className="field"><label htmlFor="admin-name">Full name</label><input id="admin-name" placeholder="Enter administrator full name" maxLength={120} value={adminForm.full_name} onChange={e => setAdminForm(current => ({ ...current, full_name: e.target.value }))} autoComplete="off" required /></div>
+              <div className="field"><label htmlFor="admin-email">Email <span className="placeholder">(optional)</span></label><input id="admin-email" type="email" placeholder="admin@citylens.gov" maxLength={254} value={adminForm.email} onChange={e => setAdminForm(current => ({ ...current, email: e.target.value }))} autoComplete="email" /></div>
+              <div className="field"><label htmlFor="admin-password">Initial Password</label><input id="admin-password" type="password" placeholder="At least 8 characters" minLength={8} maxLength={128} value={adminForm.password} onChange={e => setAdminForm(current => ({ ...current, password: e.target.value }))} autoComplete="new-password" required /><div className="hint-sm">At least 8 characters. The new Admin can sign in using their Admin ID or Email.</div></div>
+              <button className="btn primary" type="submit" disabled={saving}>{saving ? 'Creating…' : 'Create Admin Account'}</button>
+            </form>
+          )}
         </section>
         <section className="panel workforce-list-panel"><div className="workforce-section-heading"><div><span className="eyebrow">WORKER DIRECTORY</span><h2>Worker profiles</h2></div><span className="workforce-count">{workers.length} accounts</span></div>
           {!workers.length ? <p className="placeholder">No worker accounts yet. Create the first field account.</p> : <div className="workforce-worker-list">{workers.map(worker => <Link className="workforce-worker-card" to={`/admin/workforce/${encodeURIComponent(worker.worker_id)}`} key={worker.worker_id}><div className="workforce-worker-avatar">{worker.full_name.slice(0, 1).toUpperCase()}</div><div className="workforce-worker-copy"><strong>{worker.full_name}</strong><span>{worker.worker_id} · {worker.department}</span><small>{worker.total_assigned} assigned · {worker.completed} completed · {worker.overdue} overdue</small></div><span className={`badge ${worker.account_status === 'active' ? 'LOW' : 'HIGH'}`}>{worker.account_status}</span></Link>)}</div>}

@@ -33,6 +33,8 @@ export const loginCitizen = (accountId, password) => api.post('/auth/citizen/log
 export const loginAdmin = (accountId, password) => api.post('/auth/admin/login', { account_id: accountId, password }).then(r => r.data);
 export const loginWorker = (accountId, password) => api.post('/auth/worker/login', { account_id: accountId, password }).then(r => r.data);
 export const registerCitizen = (details) => api.post('/auth/citizen/register', details).then(r => r.data);
+export const registerAdmin = (details) => api.post('/auth/admin/register', details).then(r => r.data);
+export const getAdminAccounts = () => api.get('/auth/admin/accounts').then(r => r.data);
 export const getSession = () => api.get('/auth/me').then(r => r.data);
 export const logoutPortal = () => api.post('/auth/logout').then(r => r.data);
 

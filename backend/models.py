@@ -137,3 +137,15 @@ class WorkerProgressUpdate(Base):
     file_hash = Column(String(64), nullable=True)
     authenticity_status = Column(String(300), nullable=False, default="No photo uploaded; no authenticity check performed.")
     metadata_summary = Column(Text, nullable=True)
+
+
+class AdminAccount(Base):
+    __tablename__ = "admin_accounts"
+
+    admin_id = Column(String(32), primary_key=True)
+    full_name = Column(String(120), nullable=False)
+    email = Column(String(254), nullable=True)
+    password_hash = Column(String(256), nullable=False)
+    account_status = Column(String(16), nullable=False, default="active")
+    created_at = Column(DateTime(timezone=True), nullable=False, default=func.now())
+

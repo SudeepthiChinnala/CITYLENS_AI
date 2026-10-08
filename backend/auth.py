@@ -148,6 +148,29 @@ class CitizenRegistrationRequest(BaseModel):
         return value
 
 
+class AdminRegistrationRequest(BaseModel):
+    admin_id: str = Field(min_length=3, max_length=32)
+    full_name: str = Field(min_length=2, max_length=120)
+    email: str | None = Field(default=None, max_length=254)
+    password: str = Field(min_length=8, max_length=128)
+
+    @field_validator('admin_id')
+    @classmethod
+    def normalize_admin_id(cls, value: str) -> str:
+        value = value.strip().upper()
+        if not re.fullmatch(r'[A-Z0-9][A-Z0-9._-]{2,31}', value):
+            raise ValueError('Admin ID must use 3–32 letters, numbers, dots, underscores, or hyphens.')
+        return value
+
+    @field_validator('full_name')
+    @classmethod
+    def normalize_name(cls, value: str) -> str:
+        value = value.strip()
+        if len(value) < 2:
+            raise ValueError('Enter full name.')
+        return value
+
+
 def hash_password(password: str, salt_hex: str | None = None) -> str:
     """Return a salted PBKDF2-SHA256 verifier for backend-only storage."""
     salt = bytes.fromhex(salt_hex) if salt_hex else secrets.token_bytes(16)
@@ -282,27 +305,33 @@ async def register_citizen(payload: CitizenRegistrationRequest, db: Session = De
 
 
 @router.post('/admin/login')
-async def admin_login(payload: PortalLoginRequest, request: Request, response: Response):
-    return _login('admin', payload, request, response)
-
-
-@router.post('/worker/login')
-async def worker_login(
+async def admin_login(
     payload: PortalLoginRequest,
     request: Request,
     response: Response,
     db: Session = Depends(get_db),
 ):
-    from .models import WorkerAccount
+    from .models import AdminAccount
 
-    worker_id = payload.account_id.strip()
-    _raise_if_known_wrong_portal('worker', worker_id)
-    worker = db.query(WorkerAccount).filter(func.lower(WorkerAccount.worker_id) == worker_id.lower()).first()
-    if not worker or not verify_password(payload.password, worker.password_hash):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Invalid worker ID or password.')
-    if worker.account_status != 'active':
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='This worker account is inactive.')
-    return _new_session(response, request, PortalIdentity(role='worker', account_id=worker.worker_id))
+    admin_key = payload.account_id.strip()
+    _raise_if_known_wrong_portal('admin', admin_key)
+
+    # First check database for registered Admin accounts
+    admin = db.query(AdminAccount).filter(
+        or_(
+            func.lower(AdminAccount.admin_id) == admin_key.lower(),
+            func.lower(AdminAccount.email) == admin_key.lower(),
+        )
+    ).first()
+    if admin:
+        if not verify_password(payload.password, admin.password_hash):
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Invalid admin ID or password.')
+        if admin.account_status != 'active':
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='This administrator account is inactive.')
+        return _new_session(response, request, PortalIdentity(role='admin', account_id=admin.admin_id))
+
+    # Fallback to environment/default admin account (ADMIN-001)
+    return _login('admin', payload, request, response)
 
 
 async def get_current_user(request: Request) -> PortalIdentity:
@@ -333,6 +362,89 @@ def require_roles(*roles: str) -> Callable:
         return identity
 
     return _require_role
+
+
+@router.post('/admin/register', status_code=status.HTTP_201_CREATED)
+async def register_admin(
+    payload: AdminRegistrationRequest,
+    db: Session = Depends(get_db),
+    identity: PortalIdentity = Depends(require_roles('admin')),
+):
+    from .models import AdminAccount
+
+    admin_id_clean = payload.admin_id.strip().upper()
+    if db.query(AdminAccount).filter(func.lower(AdminAccount.admin_id) == admin_id_clean.lower()).first():
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail='An admin account with this Admin ID already exists.')
+
+    if payload.email and db.query(AdminAccount).filter(func.lower(AdminAccount.email) == payload.email.strip().lower()).first():
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail='An admin account with this email already exists.')
+
+    account = AdminAccount(
+        admin_id=admin_id_clean,
+        full_name=payload.full_name.strip(),
+        email=payload.email.strip().lower() if payload.email else None,
+        password_hash=hash_password(payload.password),
+        account_status='active',
+    )
+    db.add(account)
+    try:
+        db.commit()
+        db.refresh(account)
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail='Admin account creation failed due to duplicate details.')
+
+    return {'detail': 'Admin account created successfully.', 'admin_id': account.admin_id, 'full_name': account.full_name}
+
+
+@router.get('/admin/accounts')
+async def list_admin_accounts(
+    db: Session = Depends(get_db),
+    identity: PortalIdentity = Depends(require_roles('admin')),
+):
+    from .models import AdminAccount
+
+    admins = db.query(AdminAccount).all()
+    # Always include the active environment/default admin in the list
+    default_id, _ = _account_config('admin')
+    result = []
+    if default_id and not any(a.admin_id == default_id for a in admins):
+        result.append({
+            'admin_id': default_id,
+            'full_name': 'System Administrator (Primary)',
+            'email': 'admin@citylens.gov',
+            'account_status': 'active',
+            'created_at': None,
+        })
+    for a in admins:
+        result.append({
+            'admin_id': a.admin_id,
+            'full_name': a.full_name,
+            'email': a.email,
+            'account_status': a.account_status,
+            'created_at': a.created_at,
+        })
+    return result
+
+
+
+@router.post('/worker/login')
+async def worker_login(
+    payload: PortalLoginRequest,
+    request: Request,
+    response: Response,
+    db: Session = Depends(get_db),
+):
+    from .models import WorkerAccount
+
+    worker_id = payload.account_id.strip()
+    _raise_if_known_wrong_portal('worker', worker_id)
+    worker = db.query(WorkerAccount).filter(func.lower(WorkerAccount.worker_id) == worker_id.lower()).first()
+    if not worker or not verify_password(payload.password, worker.password_hash):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Invalid worker ID or password.')
+    if worker.account_status != 'active':
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='This worker account is inactive.')
+    return _new_session(response, request, PortalIdentity(role='worker', account_id=worker.worker_id))
 
 
 @router.get('/me')
